@@ -24,7 +24,7 @@ module BeakerPuppetHelpers
         puppet_opts[:version] = version if version
         puppet_opts[:module_repository] = module_repository if module_repository
 
-        on host, Beaker::PuppetCommand.new('module', ['install', module_name], puppet_opts)
+        on host, Beaker::PuppetCommand.new('module', ['install', '--verbose', '--ignore-dependencies', module_name], puppet_opts)
       end
     end
 
