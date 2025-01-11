@@ -8,8 +8,8 @@ module BeakerPuppetHelpers
     # @api private
     REPOS = {
       release: {
-        apt: 'https://apt.puppet.com',
-        yum: 'https://yum.puppet.com',
+        apt: 'https://apt.overlookinfratech.com',
+        yum: 'https://yum.overlookinfratech.com',
       },
       nightly: {
         apt: 'https://nightlies.puppet.com/apt',
@@ -25,7 +25,7 @@ module BeakerPuppetHelpers
     # @param [Beaker::Host] host
     #   A host to act upon.
     # @param [String] collection
-    #   The collection to install. The default (puppet) is the latest
+    #   The collection to install. The default (openvox) is the latest
     #   available version.
     # @param [Boolean] nightly
     #   Whether to install nightly or release packages
@@ -33,7 +33,7 @@ module BeakerPuppetHelpers
     # @note This method only works on redhat-like and debian-like hosts. There
     #   are no official Puppet releases for other platforms.
     #
-    def self.install_puppet_release_repo_on(host, collection = 'puppet', nightly: false)
+    def self.install_puppet_release_repo_on(host, collection = 'openvox', nightly: false)
       repos = REPOS[nightly ? :nightly : :release]
 
       variant, version, _arch = host['packaging_platform'].split('-', 3)
@@ -46,7 +46,7 @@ module BeakerPuppetHelpers
         # package. We'll have to remember to update this block when
         # we update the signing keys
         if variant == 'sles' && version >= '11'
-          %w[puppet puppet-20250406].each do |gpg_key|
+          %w[overlook].each do |gpg_key|
             wget_on(host, "https://yum.puppet.com/RPM-GPG-KEY-#{gpg_key}") do |filename|
               host.exec(Beaker::Command.new("rpm --import '#{filename}'"))
             end
@@ -56,7 +56,7 @@ module BeakerPuppetHelpers
         url = "#{repos[:yum]}/#{collection}-release-#{variant}-#{version}.noarch.rpm"
         host.install_package(url)
       when 'debian', 'ubuntu'
-        url = "#{repos[:apt]}/#{collection}-release-#{host['platform'].codename}.deb"
+        url = "#{repos[:apt]}/#{collection}-release-#{variant}#{version}.deb"
         wget_on(host, url) do |filename|
           host.install_package(filename)
         end
@@ -77,20 +77,7 @@ module BeakerPuppetHelpers
     #   Whether to prefer AIO packages or OS packages
     # @return [String] The Puppet package name
     def self.puppet_package_name(host, prefer_aio: true)
-      case host['packaging_platform'].split('-', 3).first
-      when 'debian'
-        # 12 started to ship puppet-agent with puppet as a legacy package
-        (prefer_aio || host['packaging_platform'].split('-', 3)[1].to_i >= 12) ? 'puppet-agent' : 'puppet'
-      when /el|fedora|sles|cisco_/
-        prefer_aio ? 'puppet-agent' : 'puppet'
-      when /freebsd/
-        'sysutils/puppet8'
-      when 'ubuntu'
-        # 23.04 started to ship puppet-agent with puppet as a legacy package
-        (prefer_aio || host['packaging_platform'].split('-', 3)[1].to_i >= 2304) ? 'puppet-agent' : 'puppet'
-      else
-        'puppet'
-      end
+      'openvox-agent'
     end
 
     # @param [Beaker::Host] host
